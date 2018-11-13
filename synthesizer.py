@@ -1,6 +1,5 @@
 import numpy
 import pyaudio
-import threading
 import time
 from pymusician import Note
 
