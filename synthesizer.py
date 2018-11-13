@@ -16,22 +16,10 @@ def sine(frequency, length):
 def create_sine(frequency,length):
     return [sine(frequency,length)]
 
+overtone_ratios = (2,3,4,5,6,8,9,10,11,12,13,15,16)
 def create_overtones(frequency,length):
-    return [
-        numpy.concatenate(create_sine(frequency * 2,length)) * 0.005,
-        numpy.concatenate(create_sine(frequency * 3,length)) * 0.005,
-        numpy.concatenate(create_sine(frequency * 4,length)) * 0.005,
-        numpy.concatenate(create_sine(frequency * 5,length)) * 0.0005,
-        numpy.concatenate(create_sine(frequency * 6,length)) * 0.0005,
-        numpy.concatenate(create_sine(frequency * 8,length)) * 0.0005,
-        numpy.concatenate(create_sine(frequency * 9,length)) * 0.0005,
-        numpy.concatenate(create_sine(frequency * 10,length)) * 0.0005,
-        numpy.concatenate(create_sine(frequency * 11,length)) * 0.0005,
-        numpy.concatenate(create_sine(frequency * 12,length)) * 0.0005,
-        numpy.concatenate(create_sine(frequency * 13,length)) * 0.0005,
-        numpy.concatenate(create_sine(frequency * 15,length)) * 0.0005,
-        numpy.concatenate(create_sine(frequency * 16,length)) * 0.0005,
-    ]
+    return [numpy.concatenate(create_sine(frequency * ratio,length)) * (
+            0.005 if ratio < 5 else 0.0005) for ratio in overtone_ratios]
 
 def create_tone_chunk(frequency, length, modulate=BASE_MODULATION):
     fundamental = create_sine(frequency,length)

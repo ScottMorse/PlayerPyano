@@ -1,1 +1,5 @@
 playerpyano.py
+
+Thanks to some code snippets on using the PyAudio library as an analog synth, I've managed to make an "organ" analog synth sound with about the quality of a GameBoy Color's audio system.  Pretty retro, but fun to see how binary data can be dynamically created and streamed as sound.  Currently working on a way to use PyMusician to choose musical frequencies to create a retro game music generator.  Video coming in the near future of this!
+
+Since this is just an image, here is the full code that just runs the synthesizer, relatively short! https://github.com/ScottMorse/PlayerPyano
