@@ -6,7 +6,7 @@ from pymusician import Note
 p = pyaudio.PyAudio()
 
 SAMPLE_RATE = 22000
-BASE_MODULATION = 0.3
+BASE_MODULATION = 0.2
 
 def sine(frequency, length):
     length = length * SAMPLE_RATE
@@ -30,9 +30,9 @@ def create_tone_chunk(frequency, length, modulate=BASE_MODULATION):
     string1_ov = create_overtones(frequency - modulate,length)
     string2_ov = create_overtones(frequency + modulate, length)
     
-    chunk = numpy.concatenate(fundamental) * 0.25 * (1/3)
-    chunk += numpy.concatenate(string1) * 0.25 * (1/3)
-    chunk += numpy.concatenate(string2) * 0.25 * (1/3)
+    chunk = numpy.concatenate(fundamental) * 0.3 * (1/3)
+    chunk += numpy.concatenate(string1) * 0.3 * (1/3)
+    chunk += numpy.concatenate(string2) * 0.3 * (1/3)
 
     for overtone in overtones:
         chunk += overtone
