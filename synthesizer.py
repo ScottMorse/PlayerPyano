@@ -64,8 +64,8 @@ class Stream():
             chunk += tone * multiplier
 
         if fade:
-            fade_in_frames = 200
-            fade_out_frames = 15000
+            fade_in_frames = 500
+            fade_out_frames = 2000
         else:
             fade_in_frames = 100
             fade_out_frames = 50
