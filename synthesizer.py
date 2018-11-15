@@ -2,11 +2,12 @@ import numpy
 import pyaudio
 import time
 from pymusician import Note
+from random import random, randint
 
 p = pyaudio.PyAudio()
 
 SAMPLE_RATE = 22000
-BASE_MODULATION = 0.2
+BASE_MODULATION = random() * 0.7
 
 def sine(frequency, length):
     length = length * SAMPLE_RATE
@@ -45,6 +46,8 @@ def create_tone_chunk(frequency, length, modulate=BASE_MODULATION):
     
     return chunk
 
+ATTACK = randint(300,700)
+
 class Stream():
 
     def __init__(self):
@@ -64,10 +67,10 @@ class Stream():
             chunk += tone * multiplier
 
         if fade:
-            fade_in_frames = 500
-            fade_out_frames = 2000
+            fade_in_frames = ATTACK
+            fade_out_frames = 5000
         else:
-            fade_in_frames = 100
+            fade_in_frames = ATTACK
             fade_out_frames = 50
 
         fade_in = numpy.arange(0., 1., 1./fade_in_frames)
