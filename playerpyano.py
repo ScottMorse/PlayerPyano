@@ -6,13 +6,11 @@ from random import randint,random
 
 stream = synthesizer.Stream()
 
-TEMPO = randint(60,300)
+TEMPO = randint(60,250)
 
 KEY_ROOTS = ('Ab','A','Bb','B','C','Db','D','Eb','E','F','Gb','G')
 
-KEY_QUAL = ('major','minor','dorian')[randint(0,2)]
-
-KEY_QUAL = 'dorian'
+KEY_QUAL = ('major','minor','dorian','whole tone')[randint(0,3)]
 
 KEY = Mode(KEY_ROOTS[randint(0,11)],KEY_QUAL)
 
@@ -24,13 +22,15 @@ HARMONIC_RHYTHM_VALUE = Note('A',0,HARMONIC_RHYTHM).rhythm.value
 
 HARMONIC_DURATION = (60 / TEMPO) * (HARMONIC_RHYTHM_VALUE / 128)
 
-HARMONIC_METHOD = ideas.PROGRESSIONS[randint(0,1)]
+HARMONIC_METHOD = ideas.PROGRESSIONS[randint(0,len(ideas.PROGRESSIONS) - 1)]
 
-#standard progression cycle
 romans = [1]
 prev_roman = 1
 for i in range(50):
-    options = HARMONIC_METHOD[prev_roman]
+    if KEY_QUAL == 'whole tone':
+        options = ideas.anything_goes_6[prev_roman]
+    else:
+        options = HARMONIC_METHOD[prev_roman]
     next_roman = options[randint(0,len(options) - 1)]
     romans.append(next_roman)
     if i > 30 and next_roman == 1:
@@ -47,7 +47,7 @@ RHYTHMIC_PERIOD = HARMONIC_RHYTHM_VALUE * len(chords)
 melodic_ideas = []
 prev_note = None
 for chord in chords:
-    melodic_ideas.append(ideas.random_melodic_idea()(chord,prev_note,HARMONIC_RHYTHM_VALUE))
+    melodic_ideas.append(ideas.random_melodic_idea()(chord,prev_note,HARMONIC_RHYTHM_VALUE,KEY))
     prev_note = melodic_ideas[-1][-1][-1]
 
 idea_count = 1
@@ -62,43 +62,5 @@ for idea in melodic_ideas:
         stream.play_notes(duration,*melodic_group,fade=fade)
         melody_count += 1
     idea_count += 1
-
-# harmony = [(Chord('C'),Chord('G'))]
-# HARMONIC_RHYTHM = ('3')
-# HARMONIC_RHYTHM_VALUE = Note('A',0,HARMONIC_RHYTHM).rhythm.value
-# VOICING = (0,1,2)
-
-# chord_count = melody_length // HARMONIC_RHYTHM_VALUE
-# harmonic_rhythm_positions = [i * HARMONIC_RHYTHM_VALUE for i in range(chord_count)]
-
-# n = 1
-# rhythmic_position = 0
-# chord_position = 0
-# fade = False
-# for note in melody:
-#     duration = (60 / TEMPO) * (note.rhythm.value / 128)
-#     if rhythmic_position == harmonic_rhythm_positions[chord_position + 1]:
-#         chord_position += 1
-#     chord = net_chords[chord_position]
-#     harmony_notes = []
-#     for cnote in chord:
-#         cnote.octave = 3
-#         harmony_notes.append(cnote)
-#     if n == len(melody):
-#         duration *= 2
-#         fade = True
-#     stream.play_notes(duration,note,*harmony_notes,fade=fade)
-#     rhythmic_position += note.rhythm.value
-#     n += 1
-
-# i = 1
-# fade = False
-# for melNote in melody:
-#     duration = (60 / TEMPO) * (melNote.rhythm.value / 128)
-#     if i == len(melody):
-#         duration *= 2
-#         fade = True
-#     stream.play_notes(duration,melNote,*harmony_notes,fade=fade)
-#     i += 1
 
 stream.stream.close()

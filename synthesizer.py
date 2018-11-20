@@ -17,36 +17,37 @@ def sine(frequency, length):
 def create_sine(frequency,length):
     return [sine(frequency,length)]
 
-overtone_ratios = (2,3,4,5,6,8,9,10,11,12,13,15,16)
+OVERTONE_INTENSITY = 0.04 * random() + 0.02
+
+all_overtone_ratios = (2,3,4,5,6,8,9,10,11,12,13,15,16)
+clarinet_overtone_ratios = (3,5,9,11,13,15)
+organ_overtone_ratios = (2,4,6,8,10,12,16)
+
+OVERTONES_TO_USE = (all_overtone_ratios,clarinet_overtone_ratios,organ_overtone_ratios)[randint(0,2)]
+
 def create_overtones(frequency,length):
     return [numpy.concatenate(create_sine(frequency * ratio,length)) * (
-            0.005 if ratio < 5 else 0.0005) for ratio in overtone_ratios]
+            OVERTONE_INTENSITY if ratio < 5 else OVERTONE_INTENSITY * 0.1) for ratio in OVERTONES_TO_USE]
+
+NORMALIZE_VOLUME = 0.3
 
 def create_tone_chunk(frequency, length, modulate=BASE_MODULATION):
-    fundamental = create_sine(frequency,length)
-    overtones = create_overtones(frequency,length)
 
-    string1 = create_sine(frequency - modulate,length)
-    string2 = create_sine(frequency + modulate,length)
-    string1_ov = create_overtones(frequency - modulate,length)
-    string2_ov = create_overtones(frequency + modulate, length)
-    
-    chunk = numpy.concatenate(fundamental) * 0.3 * (1/3)
-    chunk += numpy.concatenate(string1) * 0.3 * (1/3)
-    chunk += numpy.concatenate(string2) * 0.3 * (1/3)
+    mod_freq1 = frequency - modulate
+    mod_freq2 = frequency + modulate
 
-    for overtone in overtones:
-        chunk += overtone
-    
-    for overtone in string1_ov:
-        chunk += overtone
-    
-    for overtone in string2_ov:
-        chunk += overtone
+    frequencies = [frequency,mod_freq1,mod_freq2]
+
+    overtones = [create_overtones(freq,length) for freq in frequencies]
+    sines = [create_sine(freq,length) for freq in frequencies]
+
+    chunks = [sum([numpy.concatenate(sine) * NORMALIZE_VOLUME * (1/3) for sine in sines])]
+    [chunks.extend([overtone for overtone in overtone_array]) for overtone_array in overtones]
+    chunk = sum(chunks)
     
     return chunk
 
-ATTACK = randint(300,700)
+ATTACK = round(300 * random()) + 100
 
 class Stream():
 
@@ -68,7 +69,7 @@ class Stream():
 
         if fade:
             fade_in_frames = ATTACK
-            fade_out_frames = 5000
+            fade_out_frames = 4000
         else:
             fade_in_frames = ATTACK
             fade_out_frames = 50
