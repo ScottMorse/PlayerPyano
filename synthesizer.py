@@ -89,3 +89,5 @@ if __name__ == '__main__':
     stream.play_notes(1,Note("A",3),Note("C#",4),Note("E",4))
 
     stream.stream.close()
+
+    
