@@ -5,7 +5,7 @@ import math
 CHORD_QUALITIES = {
     'major': (
         ('maj','6')[randint(0,1)],
-        ('min7','dom7')[randint(0,1)],
+        ('min','min7','min9')[randint(0,2)],
         'min',
         ('maj','maj7')[randint(0,1)],
         'dom7',
@@ -17,7 +17,7 @@ CHORD_QUALITIES = {
             'dim',
             'maj',
             'min',
-            ('min7','dom7','+','7b9')[randint(0,3)],
+            ('min7','dom7','7b9')[randint(0,2)],
             'maj7',
             'maj'
         ),
@@ -125,7 +125,7 @@ TRIPLET = 1
 
 ARPEGGIATE_HARMONY = randint(0,1)
 
-NEIGHBORLY_RANDOMNESS = randint(1,20)
+NEIGHBORLY_RANDOMNESS = randint(1,10)
 
 def create_harmony(chord,harm_rhythm):
     harmony_notes = []
@@ -139,15 +139,11 @@ def create_harmony(chord,harm_rhythm):
         prev_harm_note = note
     return harmony_notes
 
-if randint(0,1):
-    RHYTHMIC_DIVISIONS = ("4t","3t")
-else:
-    RHYTHMIC_DIVISIONS = ("3","4","5")
+RHYTHMIC_DIVISIONS = (("4t","3t"),("3","4","5"),("3t","4t","5t"),('4t',),('3t',),('4'))[randint(0,5)]
 
 RHYTHMIC_DOUBLERS = {
-    "3": "4",
-    "4": "5",
     "3t": "4t",
+    "4": "5",
 }
 
 def produce_notes(chord,prev_note,harm_rhythm,key_mode,pattern=None):
@@ -159,7 +155,7 @@ def produce_notes(chord,prev_note,harm_rhythm,key_mode,pattern=None):
     rhythm_remainder = harm_rhythm
 
     chord_note_names = [note.name for note in chord]
-    key_note_names = [note.name for note in key_mode]
+    key_note_names = [note.enharmonic().enharmonic(prefer="b").name for note in key_mode]
 
     arp_patt = None
 
@@ -167,8 +163,12 @@ def produce_notes(chord,prev_note,harm_rhythm,key_mode,pattern=None):
         arp_patt = ARPEGGIATION_PATTERNS_TRIAD if len(chord.spelling) == 3 else ARPEGGIATION_PATTERNS_SEVENTH
         arp_patt = arp_patt[randint(0,len(arp_patt) - 1)]
 
+    rhythm = rhythmic_divisions[randint(0,len(rhythmic_divisions) - 1)]
+
+    dotted = randint(0,1) and rhythm == "3" and "4t" not in RHYTHMIC_DIVISIONS and harm_rhythm == 256
+
     xi = 0
-    while rhythm_remainder > 0:
+    while round(rhythm_remainder) > 0:
 
         if arp_patt:
             if xi >= len(arp_patt):
@@ -205,15 +205,25 @@ def produce_notes(chord,prev_note,harm_rhythm,key_mode,pattern=None):
                         mel_note = chord.spelling[randint(0,len(chord.spelling) - 1)]
                         mel_note.octave = prev_note.octave
 
-        rhythm = rhythmic_divisions[randint(0,len(rhythmic_divisions) - 1)]
-        mel_note.rhythm = rhythm
+        if dotted:
+            if xi % 2 == 0:
+                mel_note.rhythm = "3."
+            else:
+                mel_note.rhythm = "4"
+        else:
+            mel_note.rhythm = rhythm
 
-        rhythm_remainder -= math.floor(mel_note.rhythm.value)
+        rhythm_remainder -= mel_note.rhythm.value
         
         if ARPEGGIATE_HARMONY:
             note_group = [(harmony_notes[randint(0,len(harmony_notes) - 1)]) for x in range(2)]
         else:
             note_group = list(harmony_notes)
+
+        if mel_note.octave < 4:
+            mel_note.octave = 4
+        elif mel_note.octave > 5:
+            mel_note.octave = 5
 
         if rhythm in RHYTHMIC_DOUBLERS:
             neighbored = True if not randint(0,NEIGHBORLY_RANDOMNESS) else False
@@ -222,12 +232,17 @@ def produce_notes(chord,prev_note,harm_rhythm,key_mode,pattern=None):
 
             direction = (-1,1)[randint(0,1)]
 
-            attempt_note = Note.from_hard_pitch(mel_hard_pitch + direction).enharmonic("b")
+            attempt_note = Note.from_hard_pitch(mel_hard_pitch + direction).enharmonic(prefer="b")
 
+            if 'dom' in chord.symbol:
+                if attempt_note.pitch == chord.spelling[1].pitch - 1:
+                    neighbor = chord.spelling[1]
+                    neighbor.octave = attempt_note.octave
             if attempt_note.name in key_note_names:
                 neighbor = attempt_note
             else:
                 neighbor = Note.from_hard_pitch(mel_hard_pitch + direction * 2)
+
             neighbor.rhythm = RHYTHMIC_DOUBLERS[rhythm]
 
             multi_group = [mel_note,neighbor]
@@ -244,124 +259,3 @@ def produce_notes(chord,prev_note,harm_rhythm,key_mode,pattern=None):
         prev_note = mel_note
         xi += 1
     return note_groups
-
-# def arpeggiate(chord,prev_note,harm_rhythm,key_mode,pattern=None):
-#     note_groups = []
-#     harmony_notes = create_harmony(chord,harm_rhythm)
-#     if not prev_note:
-#         if len(chord.spelling) == 3:
-#             pattern = ARPEGGIATION_PATTERNS_TRIAD[randint(0,len(ARPEGGIATION_PATTERNS_TRIAD) - 1)]
-#         else:
-#             pattern = ARPEGGIATION_PATTERNS_SEVENTH[randint(0,len(ARPEGGIATION_PATTERNS_SEVENTH) - 1)]
-#         rhythmic_divider = 64
-#         if TRIPLET:
-#             rhythmic_divider *= (2/3)
-#         for i in range(round(harm_rhythm / rhythmic_divider)): # 64 to divide harmonic rhythm into eighth notes
-#             if i >= len(pattern):
-#                 i -= len(pattern) * (i // len(pattern))
-#             mel_note = chord.spelling[pattern[i]]
-#             mel_note.octave = 4
-#             if SWING and not TRIPLET:
-#                 if i % 2 == 0:
-#                     mel_note.rhythm = '3t'
-#                 else:
-#                     mel_note.rhythm = '4t'
-#             elif not TRIPLET:
-#                 mel_note.rhythm = '4'
-#             else:
-#                 mel_note.rhythm = '4t'
-#             note_group = list(harmony_notes)
-#             if ARPEGGIATE_HARMONY:
-#                 [note_group.append(harmony_notes[randint(0,len(harmony_notes) - 1)]) for x in range(2)]
-#             note_group.append(mel_note)
-#             note_groups.append(note_group)
-#     else:
-#         rhythmic_divider = 64
-#         if TRIPLET:
-#             rhythmic_divider *= (2/3)
-        
-#         for i in range(round(harm_rhythm / rhythmic_divider)):
-#             note_group = list(harmony_notes)
-#             if ARPEGGIATE_HARMONY:
-#                 note_group.append(harmony_notes[randint(0,len(harmony_notes) - 1)])
-#             prev_hard_pitch = prev_note.hard_pitch
-#             for cnote in chord:
-#                 cnote.octave = prev_note.octave
-#                 up_or_down_range = (range(prev_hard_pitch - (2,4)[randint(0,1)], prev_hard_pitch),range(prev_hard_pitch + 1,prev_hard_pitch + (3,5)[randint(0,1)]))[randint(0,1)]
-#                 if cnote.hard_pitch in up_or_down_range:
-#                     mel_note = cnote
-#                     break
-#             else:
-#                 for cnote in chord:
-#                     cnote.octave = prev_note.octave + 1
-#                     up_or_down_range = (range(prev_hard_pitch - (2,4)[randint(0,1)], prev_hard_pitch),range(prev_hard_pitch + 1,prev_hard_pitch + (3,5)[randint(0,1)]))[randint(0,1)]
-#                     if cnote.hard_pitch in up_or_down_range:
-#                         mel_note = cnote
-#                         break
-#                 else:
-#                     for cnote in chord:
-#                         cnote.octave = prev_note.octave - 1
-#                         up_or_down_range = (range(prev_hard_pitch - (2,4)[randint(0,1)], prev_hard_pitch),range(prev_hard_pitch + 1,prev_hard_pitch + (3,5)[randint(0,1)]))[randint(0,1)]
-#                         if cnote.hard_pitch in up_or_down_range:
-#                             mel_note = cnote
-#                             break
-#                     else:
-#                         mel_note = chord.spelling[randint(0,len(chord.spelling) - 1)]
-#                         mel_note.octave = prev_note.octave
-            
-#             neighbored = True if not randint(0,NEIGHBORLY_RANDOMNESS) else False
-#             chord_note_names = [note.name for note in chord]
-#             key_note_names = [note.name for note in key_mode]
-
-#             if SWING and not TRIPLET:
-#                 if i % 2 == 0:
-#                     mel_note.rhythm = '3t'
-#                 else:
-#                     mel_note.rhythm = '4t'
-#             elif not TRIPLET:
-#                 mel_note.rhythm = '4'
-#             else:
-#                 mel_note.rhythm = '4t'
-
-#             if mel_note.name == prev_note.name:
-#                 disallow = randint(0,9)
-#                 if disallow:
-#                     new_note = chord.spelling[0]
-#                     while new_note.name == mel_note.name:
-#                         new_note = chord.spelling[randint(0,len(chord.spelling) - 1)]
-#                     new_note.octave = mel_note.octave
-#                     new_note.rhythm = mel_note.rhythm.flags
-#                     mel_note = new_note
-#             if mel_note.octave < 4:
-#                 mel_note.octave += 1
-#             if mel_note.octave > 6:
-#                 mel_note.octave -= 1
-
-#             if neighbored and not SWING and not TRIPLET:
-#                 mel_hard_pitch = mel_note.hard_pitch
-#                 direction = (-1,1)[randint(0,1)]
-#                 if mel_note.rhythm.flags == '4':
-#                     mel_note.rhythm = '5'
-#                 attempt_note = Note.from_hard_pitch(mel_hard_pitch + direction)
-#                 if attempt_note.name in key_note_names:
-#                     neighbor = attempt_note
-#                 else:
-#                     neighbor = Note.from_hard_pitch(mel_hard_pitch + direction * 2)
-#                 neighbor.rhythm = '5'
-#                 multi_group = [mel_note,neighbor]
-#                 for i in range(2):
-#                     note_group_copy = list(note_group)
-#                     note_group_copy.append(multi_group[i])
-#                     multi_group[i] = note_group_copy
-#                 note_groups.extend(multi_group)
-#             else:
-#                 note_group.append(mel_note)
-#                 note_groups.append(note_group)
-#             prev_note = mel_note
-#     return note_groups
-    
-
-MELODIC_IDEA_STRATEGIES = (produce_notes,)
-
-def random_melodic_idea():
-    return MELODIC_IDEA_STRATEGIES[randint(0,len(MELODIC_IDEA_STRATEGIES) - 1)]
